@@ -1,0 +1,9 @@
+pandas
+datasets
+transformers
+peft
+accelerate
+bitsandbytes
+scipy
+discord.py
+python-dotenv

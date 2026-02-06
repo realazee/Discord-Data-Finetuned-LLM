@@ -1,0 +1,22 @@
+# Secrets
+.env
+
+# Large Data & Models
+fine_tuned_discord_model/
+*.jsonl
+*.pth
+*.bin
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
