@@ -1,5 +1,5 @@
 """
-Discord Bot for Fine-tuned TinyLlama
+Discord Bot for Fine-tuned Llama 3.1 8B
 Hosts your fine-tuned model as a Discord user app with slash commands.
 """
 
@@ -25,10 +25,10 @@ if not DISCORD_TOKEN:
     raise ValueError("DISCORD_TOKEN not found in .env file!")
 
 # Model Configuration
-BASE_MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-ADAPTER_PATH = "./fine_tuned_discord_model" # Path where train.py saved adapters
-MAX_NEW_TOKENS = 150  # length of response
-TEMPERATURE = 0.8    
+BASE_MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+ADAPTER_PATH = "./fine_tuned_discord_model"  # Path where train.py saved adapters
+MAX_NEW_TOKENS = 100  # length of response
+TEMPERATURE = 0.7     # Slightly lower for more coherent responses
 TOP_P = 0.9
 
 # ============================================================================
@@ -82,7 +82,19 @@ class ModelInference:
     def generate(self, prompt: str) -> str:
         if not self.loaded: return "⚠️ Model loading..."
 
-        formatted_prompt = f"<|user|>\n<|assistant|>\n{prompt}</s>"
+        formatted_prompt = f"""
+        <|system|>
+        You are replying to a discord user.
+        Reply with ONE short message.
+        Do not write messages from other users.
+        Speak only as yourself. Do not simulate a log or roleplay
+        Do not continue the conversation.
+        Say your message, then stop.
+        <|user|>
+        {prompt}
+
+        <|assistant|>
+        """
 
         inputs = self.tokenizer(formatted_prompt, return_tensors="pt").to("cuda")
 
@@ -93,7 +105,11 @@ class ModelInference:
                 temperature=TEMPERATURE,
                 do_sample=True,
                 top_p=TOP_P,
-                pad_token_id=self.tokenizer.eos_token_id
+                top_k=50,  # Limit to top 50 tokens for diversity
+                repetition_penalty=1.1,  # Penalize repeated tokens (1.0 = no penalty, higher = more penalty)
+                no_repeat_ngram_size=2,  # Prevent repeating 3-word phrases
+                pad_token_id=self.tokenizer.eos_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
             )
 
         generated = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
